@@ -1,45 +1,75 @@
 from django.contrib import admin
+from .models import Device, StudySession, SensorBatch, SensorReading
 
-from .models import DeviceSyncState, SensorReading
 
-
-@admin.register(DeviceSyncState)
-class DeviceSyncStateAdmin(admin.ModelAdmin):
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
     list_display = (
         "device_id",
-        "last_accepted_sequence",
-        "last_successful_sync_at",
+        "firmware_version",
+        "hardware_revision",
+        "status",
         "created_at",
-        "updated_at",
     )
     search_fields = ("device_id",)
-    ordering = ("device_id",)
+    list_filter = ("status",)
+
+
+@admin.register(StudySession)
+class StudySessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "session_id",
+        "study_name",
+        "anonymized_participant_id",
+        "assigned_device",
+        "created_at",
+    )
+    search_fields = (
+        "session_id",
+        "study_name",
+        "anonymized_participant_id",
+        "assigned_device__device_id",
+    )
+    list_filter = ("study_name",)
+
+
+@admin.register(SensorBatch)
+class SensorBatchAdmin(admin.ModelAdmin):
+    list_display = (
+        "batch_id",
+        "device",
+        "session",
+        "sensor_type",
+        "received_at",
+    )
+    search_fields = (
+        "batch_id",
+        "device__device_id",
+        "session__session_id",
+        "sensor_type",
+    )
+    list_filter = ("sensor_type",)
+    ordering = ("-received_at",)
 
 
 @admin.register(SensorReading)
 class SensorReadingAdmin(admin.ModelAdmin):
     list_display = (
-        "device_id",
-        "user_id",
-        "sequence",
+        "session",
+        "device",
+        "sensor_type",
         "timestamp",
-        "temperature_c",
-        "heart_rate_bpm",
-        "spo2_percent",
-        "batch_id",
-        "created_at",
-    )
-    list_filter = (
-        "device_id",
-        "user_id",
-        "batch_id",
+        "sequence_number",
         "created_at",
     )
     search_fields = (
-        "device_id",
-        "user_id",
-        "sync_request_id",
-        "batch_id",
+        "session__session_id",
+        "device__device_id",
+        "sensor_type",
     )
-    ordering = ("device_id", "sequence")
-    readonly_fields = ("created_at",)
+    list_filter = (
+        "sensor_type",
+        "session",
+        "device",
+    )
+    ordering = ("-timestamp", "sequence_number")

@@ -1,0 +1,7 @@
+{
+  "session_id": "session-001",
+  "study_name": "Sleep Recovery Pilot",
+  "anonymized_participant_id": "participant-001",
+  "assigned_device_id": "ring-001",
+  "enabled_sensor_modules": ["imu", "ppg", "temperature"]
+}

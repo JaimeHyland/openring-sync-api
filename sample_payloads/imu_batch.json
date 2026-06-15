@@ -1,0 +1,34 @@
+{
+  "batch_id": "batch-001",
+  "device_id": "ring-001",
+  "session_id": "session-001",
+  "sensor_type": "imu",
+  "readings": [
+    {
+      "timestamp": "2026-01-01T12:00:00Z",
+      "sequence_number": 1001,
+      "values": {
+        "accel_x": 0.01,
+        "accel_y": 0.02,
+        "accel_z": 0.98,
+        "gyro_x": 0.001,
+        "gyro_y": 0.002,
+        "gyro_z": 0.003
+      },
+      "quality_flags": []
+    },
+    {
+      "timestamp": "2026-01-01T12:00:00.020Z",
+      "sequence_number": 1002,
+      "values": {
+        "accel_x": 0.02,
+        "accel_y": 0.01,
+        "accel_z": 0.97,
+        "gyro_x": 0.001,
+        "gyro_y": 0.002,
+        "gyro_z": 0.002
+      },
+      "quality_flags": []
+    }
+  ]
+}
