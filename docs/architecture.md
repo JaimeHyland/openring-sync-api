@@ -1,0 +1,8 @@
+- MVP architecture
+- researcher workflows
+- data model
+- sync boundary
+- sensor data workflow
+- security/privacy
+- scaling
+- risks/unknowns

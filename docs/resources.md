@@ -1,0 +1,2 @@
+- internet resources
+- AI/tool usage notes
