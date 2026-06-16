@@ -20,7 +20,7 @@ The priority was to demonstrate the core backend sync/data-integrity path:
 6. avoid duplicate ingestion
 7. retrieve/export readings for a session
 
-The assumed system boundary is that the smart ring does **not** communicate directly with the backend. Instead, a separate mobile or desktop sync client handles BLE communication, local device reads, retry behavior, and packaging readings into JSON batches for the API.
+The assumed system boundary is that the smart ring does **not** communicate directly with the backend. Instead, a separate mobile or desktop sync client handles BLE communication, local device reads, retry behaviour, and packaging readings into JSON batches for the API.
 
 This prototype focuses on the backend ingestion workflow only. It intentionally does not implement a frontend dashboard, real BLE communication, authentication, deployment infrastructure, real-time streaming, or large-scale sensor storage.
 
@@ -88,7 +88,7 @@ flowchart LR
     Researcher[Researcher Dashboard / Export] -->|HTTPS| API
 ```
 
-The mobile or desktop sync client is responsible for BLE communication, local device reads, binary decoding, retry behavior, and packaging readings into JSON batches.
+The mobile or desktop sync client is responsible for BLE communication, local device reads, binary decoding, retry behaviour, and packaging readings into JSON batches.
 
 The backend receives normalized JSON batches and treats them as untrusted input. It validates device IDs, session IDs, sensor types, timestamps, duplicate batch IDs, and payload structure before storing readings.
 
@@ -106,7 +106,7 @@ A typical MVP researcher workflow would be:
 10. the backend validates and stores accepted readings
 11. the researcher retrieves or exports session readings for analysis
 
-The platform is not limited to biometric research. It could support biometric, behavioral, interaction, usability, and device-prototyping studies.
+The platform is not limited to biometric research. It could support biometric, behavioural, interaction, usability, and device-prototyping studies.
 
 ## Data model
 
@@ -142,7 +142,7 @@ created_at
 updated_at
 ```
 
-Example supported sensor modules:
+Example of supported sensor modules:
 
 ```text
 imu
@@ -220,9 +220,9 @@ quality_flags
 created_at
 ```
 
-`values` is JSON so that different sensor types can send different payload shapes.
+`values` contains a flexible JSON structure so that different sensor types can send different payload shapes.
 
-Example temperature value:
+Sample temperature value:
 
 ```json
 {
@@ -230,7 +230,7 @@ Example temperature value:
 }
 ```
 
-Example IMU value:
+Sample IMU value:
 
 ```json
 {
@@ -243,7 +243,7 @@ Example IMU value:
 }
 ```
 
-Example PPG value:
+Sample PPG value:
 
 ```json
 {
@@ -290,7 +290,7 @@ POST /api/sync/batches/
 
 This endpoint receives sensor readings from the simulated sync client.
 
-## Example device registration
+## Example of device registration
 
 ```http
 POST /api/devices/
@@ -306,7 +306,7 @@ POST /api/devices/
 }
 ```
 
-## Example study session creation
+## Example of study session creation
 
 ```http
 POST /api/sessions/
@@ -322,7 +322,7 @@ POST /api/sessions/
 }
 ```
 
-## Example sync batch upload
+## Example of sync batch upload
 
 ```http
 POST /api/sync/batches/
@@ -352,7 +352,7 @@ POST /api/sync/batches/
 }
 ```
 
-Example accepted response:
+Example of an accepted response:
 
 ```json
 {
@@ -362,7 +362,7 @@ Example accepted response:
 }
 ```
 
-Example duplicate response:
+Example of a duplicate response:
 
 ```json
 {
@@ -464,7 +464,7 @@ The raw OpenAPI schema is available at:
 http://127.0.0.1:8000/api/schema/
 ```
 
-## Local setup
+## Local setup (mostly to install and configure Django and its dependencies)
 
 Create and activate a virtual environment:
 
@@ -513,11 +513,11 @@ After accessing:
 http://127.0.0.1:8000/admin/
 ```
 
-you may see a login dialog. Enter the superuser name and password you gave when creating your superuser and you will be given access to Django's admin screens, in which you can explore the contents of your database.
+on your browser, you will initially see a login dialog. Enter the superuser name and password you gave when creating your superuser and that user will be given access to Django's admin screens, in which you can explore the contents of your database.  The superuser Django session will then be preserved for the next time you  access this URL.
 
 All the above commands should be run from the project root directory.
 
-Open Swagger UI:
+Open Swagger UI on your browser:
 
 ```text
 http://127.0.0.1:8000/api/docs/
@@ -525,7 +525,7 @@ http://127.0.0.1:8000/api/docs/
 
 ## Project status
 
-Implemented:
+What I have implemented:
 
 - Django project setup
 - Django REST Framework installed
@@ -535,7 +535,7 @@ Implemented:
 - initial validation and duplicate handling
 - initial manual tests using Swagger and sample payloads
 
-Planned or incomplete:
+What is still planned or incomplete:
 
 - further manual test coverage
 - automated API testing
@@ -548,7 +548,7 @@ Planned or incomplete:
 
 ## Documentation
 
-All documentation for the purposes of this exercise is contained in this `README.md` file.
+All substantial documentation for the purposes of this exercise is contained in this `README.md` file.
 
 ## Tools used
 
@@ -561,7 +561,7 @@ All documentation for the purposes of this exercise is contained in this `README
 
 Manual API smoke testing was completed through **Swagger UI** for the main backend workflow.
 
-The following behaviors were verified manually:
+The following behaviours were verified manually:
 
 - **`POST /api/devices/`** creates a device when the payload is valid.
 - **Duplicate `device_id` submissions** are rejected.
@@ -624,7 +624,7 @@ The initial version of this endpoint could return CSV, since the current reading
 
 ## Tradeoffs and design choices
 
-This prototype reflects a few deliberate tradeoffs:
+This prototype reflects a number of deliberate tradeoffs:
 
 - **SQLite over PostgreSQL** - simpler local setup for the assessment, at the cost of production realism, scalability, and stronger operational guarantees.
 - **Backend-only scope** - allowed focus on ingestion and data integrity, at the cost of not demonstrating frontend or end-user workflow.
@@ -655,7 +655,7 @@ Security and privacy also affect research integrity.
 
 If participant identity, study group assignment, or raw readings are exposed or modified incorrectly, the platform can compromise both participant protection and study validity.
 
-The backend can support better methodology by:
+The backend could facilitate an improved methodology by:
 
 - storing anonymized participant IDs instead of direct identifiers
 - separating identity metadata from sensor readings
@@ -713,7 +713,7 @@ The backend prototype assumes the existence of a separate mobile or desktop sync
 - What guarantees exist around timestamp accuracy, timezone handling, and clock drift correction?
 - Can a single batch contain only one sensor type, or may it contain mixed sensor payloads?
 - At what point is locally held data deleted after successful sync?
-- How are partial uploads or interrupted sync attempts resumed?
+- How are partial uploads or interrupted sync attempts resumed/handled?
 - What error responses does the client need from the backend in order to recover cleanly?
 
 ## Cross-team assumptions and open questions
@@ -739,13 +739,13 @@ The backend prototype assumes the existence of a separate mobile or desktop sync
 - What is the required researcher-facing export format: JSON, CSV, both, or more?
 - What audit trail is required for sync attempts, failed uploads, and exports?
 - What participant-identity model is expected, and what GDPR constraints apply?
-- What level of missing-data visibility is required in the dashboard?
+- What level of visibility is required in the dashboard for missing data?
 - What are the expected study sizes, sync frequency, and export volume?
 - Which failures must be visible to support staff versus hidden behind automatic retries?
 
 ## Future sync protocol enhancement
 
-A production sync protocol may use explicit instructions from the backend to the sync client.
+A production sync protocol might well use explicit instructions from the backend to the sync client.
 
 For example:
 
@@ -766,7 +766,7 @@ For example:
 
 This would support initial sync, incremental sync, and recovery sync.
 
-For this assessment, I treated that as a future enhancement rather than the core implementation. The required MVP is focused on registering devices, creating sessions, ingesting batches, validating input, handling duplicates, and retrieving/exporting readings.
+For this assessment, I treated this feature as a future enhancement rather than the core implementation. The required MVP is focused on registering devices, creating sessions, ingesting batches, validating input, handling duplicates, and retrieving/exporting readings.
 
 ## Debugging and investigation
 
@@ -789,20 +789,20 @@ Researchers report that some study sessions show missing IMU or PPG samples, whi
 
 #### Debugging process
 
-- identify the affected study, session, device, and sensor type
-- compare expected sample ranges with stored backend readings
+- identify the study, session, device, and sensor type affected
+- compare expected sample ranges with readings actually stored on the backend
 - inspect batch IDs received by the API
-- check whether duplicate `batch_id` values were accepted
+- check whether duplicate `batch_id` values have been accepted
 - inspect sequence numbers and timestamps for gaps or overlaps
 - review API logs for rejected, retried, or partially failed batches
-- review sync client logs for retry behavior, offline periods, and BLE failures
-- confirm whether the same ring was synced by more than one client
+- review sync client logs for retry behaviour, offline periods, and BLE failures
+- check whether the data includes cases where the same ring was synced by more than one client
 - compare backend data with dashboard and export output
 
 #### Tools I would use
 
 - backend request logs
-- database queries
+- database queries and use of the django admin features
 - sync client logs
 - audit logs for device, session, and batch events
 - sequence/timestamp gap checks
@@ -819,7 +819,7 @@ Researchers report that some study sessions show missing IMU or PPG samples, whi
 - sync status and audit tables
 - rejected-batch logging
 - recovery sync for missing ranges
-- dashboard warnings for detected gaps
+- dashboard warnings of any gaps detected
 
 ### Issue B - Dashboard and export performance degrade with larger studies
 
@@ -833,7 +833,7 @@ A researcher runs a 7-day study with 50 participants. The dashboard becomes slow
 - synchronous export generation blocks the request/response cycle
 - large JSON or CSV responses time out
 - memory usage spikes while building export files
-- frontend renders too many points at once
+- frontend trying to render too many points at once
 - no pagination, downsampling, or aggregation
 - repeated dashboard queries recompute the same data
 
