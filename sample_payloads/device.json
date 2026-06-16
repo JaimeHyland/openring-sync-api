@@ -1,0 +1,11 @@
+ {
+    "device_id": "ring-001",
+    "firmware_version": "1.0.3",
+    "hardware_revision": "rev-a",
+    "supported_sensor_modules": [
+      "imu",
+      "ppg",
+      "temperature"
+    ],
+    "status": "registered"
+  }
