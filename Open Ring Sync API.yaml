@@ -1,0 +1,469 @@
+openapi: 3.0.3
+info:
+  title: Open Ring Sync API
+  version: 0.1.0
+  description: Prototype API for syncing wearable ring sensor data.
+paths:
+  /api/devices/:
+    post:
+      operationId: devices_create
+      tags:
+      - devices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Device'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Device'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Device'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+  /api/devices/{device_id}/:
+    get:
+      operationId: devices_retrieve
+      parameters:
+      - in: path
+        name: device_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - devices
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - ht
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/sessions/:
+    post:
+      operationId: sessions_create
+      tags:
+      - sessions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudySession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudySession'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudySession'
+          description: ''
+  /api/sessions/{session_id}/:
+    get:
+      operationId: sessions_retrieve
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - sessions
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudySession'
+          description: ''
+  /api/sessions/{session_id}/readings/:
+    get:
+      operationId: sessions_readings_list
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - sessions
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SensorReading'
+          description: ''
+  /api/sync/batches/:
+    post:
+      operationId: sync_batches_create
+      tags:
+      - sync
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorBatchIngest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SensorBatchIngest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SensorBatchIngest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchIngestResponse'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchIngestResponse'
+          description: ''
+        '400':
+          description: Validation error.
+components:
+  schemas:
+    BatchIngestResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        batch_id:
+          type: string
+        readings_ingested:
+          type: integer
+      required:
+      - batch_id
+      - readings_ingested
+      - status
+    Device:
+      type: object
+      properties:
+        device_id:
+          type: string
+          maxLength: 100
+        firmware_version:
+          type: string
+          maxLength: 50
+        hardware_revision:
+          type: string
+          maxLength: 50
+        supported_sensor_modules:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - device_id
+      - firmware_version
+      - hardware_revision
+      - supported_sensor_modules
+      - updated_at
+    ReadingInput:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        sequence_number:
+          type: integer
+          minimum: 0
+        values: {}
+        quality_flags:
+          type: array
+          items:
+            type: string
+      required:
+      - timestamp
+      - values
+    SensorBatchIngest:
+      type: object
+      properties:
+        batch_id:
+          type: string
+          maxLength: 100
+        device_id:
+          type: string
+          maxLength: 100
+        session_id:
+          type: string
+          maxLength: 100
+        sensor_type:
+          type: string
+          maxLength: 50
+        readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReadingInput'
+      required:
+      - batch_id
+      - device_id
+      - readings
+      - sensor_type
+      - session_id
+    SensorReading:
+      type: object
+      properties:
+        sensor_type:
+          type: string
+          maxLength: 50
+        timestamp:
+          type: string
+          format: date-time
+        sequence_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        values: {}
+        quality_flags:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - quality_flags
+      - sensor_type
+      - timestamp
+      - values
+    StatusEnum:
+      enum:
+      - registered
+      - active
+      - error
+      type: string
+      description: |-
+        * `registered` - Registered
+        * `active` - Active
+        * `error` - Error
+    StudySession:
+      type: object
+      properties:
+        session_id:
+          type: string
+          maxLength: 100
+        study_name:
+          type: string
+          maxLength: 255
+        anonymized_participant_id:
+          type: string
+          maxLength: 100
+        assigned_device_id:
+          type: string
+          writeOnly: true
+        assigned_device:
+          allOf:
+          - $ref: '#/components/schemas/Device'
+          readOnly: true
+        enabled_sensor_modules:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - anonymized_participant_id
+      - assigned_device
+      - assigned_device_id
+      - created_at
+      - enabled_sensor_modules
+      - session_id
+      - study_name
+      - updated_at

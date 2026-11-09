@@ -1,11 +1,70 @@
 # Open Ring Sync API
 
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [Executive summary](#executive-summary)
+- [Tech stack](#tech-stack)
+- [Resources used](#resources-used)
+- [What the project demonstrates](#what-the-project-demonstrates)
+- [Architecture and data flow](#architecture-and-data-flow)
+- [Data model](#data-model)
+   * [Device](#device)
+   * [StudySession](#studysession)
+   * [SensorBatch](#sensorbatch)
+   * [SensorReading](#sensorreading)
+- [API endpoints](#api-endpoints)
+- [Example of device registration](#example-of-device-registration)
+- [Example of study session creation](#example-of-study-session-creation)
+- [Example of sync batch upload](#example-of-sync-batch-upload)
+- [Validation rules](#validation-rules)
+- [Idempotency](#idempotency)
+- [Missing data](#missing-data)
+- [Sensor data workflow](#sensor-data-workflow)
+- [API documentation and manual testing tool](#api-documentation-and-manual-testing-tool)
+- [Local setup (mostly to install and configure Django and its dependencies)](#local-setup-mostly-to-install-and-configure-django-and-its-dependencies)
+- [Project status](#project-status)
+- [Documentation](#documentation)
+- [Tools used](#tools-used)
+- [Testing](#testing)
+   * [Minimum next automated tests](#minimum-next-automated-tests)
+   * [Next implementation step](#next-implementation-step)
+- [Tradeoffs and design choices](#tradeoffs-and-design-choices)
+- [Security, privacy, and research integrity](#security-privacy-and-research-integrity)
+- [Scaling path](#scaling-path)
+- [Questions for the client sync app team](#questions-for-the-client-sync-app-team)
+- [Cross-team assumptions and open questions](#cross-team-assumptions-and-open-questions)
+   * [Firmware / embedded](#firmware-embedded)
+   * [Mobile / desktop sync client](#mobile-desktop-sync-client)
+   * [Product / research / operations](#product-research-operations)
+- [Future sync protocol enhancement](#future-sync-protocol-enhancement)
+- [Debugging and investigation](#debugging-and-investigation)
+   * [Issue A - Sensor data missing or duplicated after sync](#issue-a-sensor-data-missing-or-duplicated-after-sync)
+      + [Likely root causes](#likely-root-causes)
+      + [Debugging process](#debugging-process)
+      + [Tools I would use](#tools-i-would-use)
+      + [Design changes I would consider](#design-changes-i-would-consider)
+   * [Issue B - Dashboard and export performance degrade with larger studies](#issue-b-dashboard-and-export-performance-degrade-with-larger-studies)
+      + [Likely bottlenecks](#likely-bottlenecks)
+      + [Debugging process](#debugging-process-1)
+      + [Tools I would use](#tools-i-would-use-1)
+      + [Design changes I would consider](#design-changes-i-would-consider-1)
+   * [Issue C - Signup or onboarding flow breaks after an update](#issue-c-signup-or-onboarding-flow-breaks-after-an-update)
+      + [Likely root causes](#likely-root-causes-1)
+      + [Debugging process](#debugging-process-2)
+      + [Tools I would use](#tools-i-would-use-2)
+      + [Design changes I would consider](#design-changes-i-would-consider-2)
+- [Limitations and further steps](#limitations-and-further-steps)
+- [Conclusion](#conclusion)
+
+<!-- TOC end -->
+
 This little project is a backend-only Django REST Framework prototype for batched smart-ring sensor data synchronization.
 
 It was built for a technical assessment for Open Ring. It demonstrates how a backend API might register wearable devices, create research study sessions, ingest batches of sensor readings from a simulated sync client, validate incoming data, prevent duplicate ingestion, and expose readings for retrieval or export.
 
 There is no frontend, no real BLE implementation, and no direct communication between the backend and the ring.
 
+<!-- TOC --><a name="executive-summary"></a>
 ## Executive summary
 
 I treated this as an MVP exercise rather than an attempt to build a complete wearable research platform.
@@ -24,6 +83,7 @@ The assumed system boundary is that the smart ring does **not** communicate dire
 
 This prototype focuses on the backend ingestion workflow only. It intentionally does not implement a frontend dashboard, real BLE communication, authentication, deployment infrastructure, real-time streaming, or large-scale sensor storage.
 
+<!-- TOC --><a name="tech-stack"></a>
 ## Tech stack
 
 - Python
@@ -42,13 +102,16 @@ SQLite keeps the assessment lightweight and easy to run locally. In production, 
 
 My IDE was Visual Studio Code.
 
+<!-- TOC --><a name="resources-used"></a>
 ## Resources used
 
 - Open Ring website, especially the specifications shown at [o-ring.tech](https://o-ring.tech/specifications/)
 - Django official documentation
 - Code Institute, my most recent Alma Mater, study notes
 - AI assistants for code snippets, clarification of scope, README drafting, and test-case brainstorming
+- https://bitdowntoc.derlin.ch/ to generate a table of contents for the README.md file
 
+<!-- TOC --><a name="what-the-project-demonstrates"></a>
 ## What the project demonstrates
 
 - device registration
@@ -60,6 +123,7 @@ My IDE was Visual Studio Code.
 - manual API tests for the core success and failure paths using Swagger
 - documented assumptions, limitations, and production next steps
 
+<!-- TOC --><a name="architecture-and-data-flow"></a>
 ## Architecture and data flow
 
 The smart ring does not communicate directly with the backend.
@@ -108,6 +172,7 @@ A typical MVP researcher workflow would be:
 
 The platform is not limited to biometric research. It could support biometric, behavioural, interaction, usability, and device-prototyping studies.
 
+<!-- TOC --><a name="data-model"></a>
 ## Data model
 
 The implementation uses a lean model:
@@ -126,6 +191,7 @@ erDiagram
     DEVICE ||--o{ SENSOR_READING : produced
 ```
 
+<!-- TOC --><a name="device"></a>
 ### Device
 
 Represents a physical smart ring.
@@ -154,6 +220,7 @@ The hardware specification also includes RGB LED, vibration motor, touch sensor,
 
 LED and vibration are actuators rather than sensor readings. Touch could later be treated as an event sensor.
 
+<!-- TOC --><a name="studysession"></a>
 ### StudySession
 
 A session is a defined data-collection context.
@@ -184,6 +251,7 @@ A session connects:
 
 For the MVP, one session has one assigned device. In production, devices may be reused, swapped, or assigned across time-bound participant sessions.
 
+<!-- TOC --><a name="sensorbatch"></a>
 ### SensorBatch
 
 Represents one upload from the sync client.
@@ -202,6 +270,7 @@ A uniqueness rule such as `device + batch_id` prevents duplicate ingestion.
 
 This matters because mobile or desktop sync clients may retry uploads after network failures.
 
+<!-- TOC --><a name="sensorreading"></a>
 ### SensorReading
 
 Represents one timestamped reading.
@@ -266,6 +335,7 @@ In a fuller production system, I would likely add separate models for:
 
 For the assessment, `study_name` and `anonymized_participant_id` are kept on the session to keep the implementation focused.
 
+<!-- TOC --><a name="api-endpoints"></a>
 ## API endpoints
 
 Core endpoints:
@@ -290,6 +360,7 @@ POST /api/sync/batches/
 
 This endpoint receives sensor readings from the simulated sync client.
 
+<!-- TOC --><a name="example-of-device-registration"></a>
 ## Example of device registration
 
 ```http
@@ -306,6 +377,7 @@ POST /api/devices/
 }
 ```
 
+<!-- TOC --><a name="example-of-study-session-creation"></a>
 ## Example of study session creation
 
 ```http
@@ -322,6 +394,7 @@ POST /api/sessions/
 }
 ```
 
+<!-- TOC --><a name="example-of-sync-batch-upload"></a>
 ## Example of sync batch upload
 
 ```http
@@ -372,6 +445,7 @@ Example of a duplicate response:
 }
 ```
 
+<!-- TOC --><a name="validation-rules"></a>
 ## Validation rules
 
 The sync batch endpoint validates that:
@@ -396,6 +470,7 @@ The API rejects:
 - malformed reading payloads
 - duplicate batch submissions
 
+<!-- TOC --><a name="idempotency"></a>
 ## Idempotency
 
 The sync client may retry a batch if the network fails or if it does not receive a response from the backend. Without duplicate handling, any retry could create duplicate readings.
@@ -408,12 +483,14 @@ In production, this should be enforced with a database uniqueness constraint suc
 device + batch_id
 ```
 
+<!-- TOC --><a name="missing-data"></a>
 ## Missing data
 
 The MVP primarily prevents duplicate batch ingestion. It does not fully reconstruct or repair missing data.
 
 Optional `sequence_number` values provide a basis for detecting gaps, out-of-order readings, or partial sync failures later. For example, if a session contains readings with sequence numbers `1001`, `1002`, and `1004`, the platform can flag that sequence `1003` may be missing.
 
+<!-- TOC --><a name="sensor-data-workflow"></a>
 ## Sensor data workflow
 
 The intended sensor data workflow is:
@@ -450,6 +527,7 @@ missing_sample
 estimated_timestamp
 ```
 
+<!-- TOC --><a name="api-documentation-and-manual-testing-tool"></a>
 ## API documentation and manual testing tool
 
 Swagger UI is available locally at:
@@ -464,6 +542,7 @@ The raw OpenAPI schema is available at:
 http://127.0.0.1:8000/api/schema/
 ```
 
+<!-- TOC --><a name="local-setup-mostly-to-install-and-configure-django-and-its-dependencies"></a>
 ## Local setup (mostly to install and configure Django and its dependencies)
 
 Create and activate a virtual environment:
@@ -513,7 +592,7 @@ After accessing:
 http://127.0.0.1:8000/admin/
 ```
 
-on your browser, you will initially see a login dialog. Enter the superuser name and password you gave when creating your superuser and that user will be given access to Django's admin screens, in which you can explore the contents of your database.  The superuser Django session will then be preserved for the next time you  access this URL.
+... on your browser, you will initially see a login dialog. Enter the superuser name and password you gave when creating your superuser and that user will be given access to Django's admin screens, in which you can explore the contents of your database.  The superuser Django session will then be preserved for the next time you  access this URL.
 
 All the above commands should be run from the project root directory.
 
@@ -523,6 +602,7 @@ Open Swagger UI on your browser:
 http://127.0.0.1:8000/api/docs/
 ```
 
+<!-- TOC --><a name="project-status"></a>
 ## Project status
 
 What I have implemented:
@@ -546,10 +626,12 @@ What is still planned or incomplete:
 - dashboard aggregation
 - stronger sync protocol with firmware/mobile teams
 
+<!-- TOC --><a name="documentation"></a>
 ## Documentation
 
 All substantial documentation for the purposes of this exercise is contained in this `README.md` file.
 
+<!-- TOC --><a name="tools-used"></a>
 ## Tools used
 
 - IDE: Visual Studio Code
@@ -557,6 +639,7 @@ All substantial documentation for the purposes of this exercise is contained in 
 - Database: SQLite
 - API documentation: drf-spectacular / Swagger UI
 
+<!-- TOC --><a name="testing"></a>
 ## Testing
 
 Manual API smoke testing was completed through **Swagger UI** for the main backend workflow.
@@ -587,6 +670,7 @@ The session readings retrieval endpoint was also tested manually through Swagger
 
 Automated tests were not completed within the assessment timebox. If the project were continued, the next priority would be to add **Django REST Framework API tests** covering the required workflow and validation rules from the brief, so that the endpoints themselves - not only the model layer - are tested.
 
+<!-- TOC --><a name="minimum-next-automated-tests"></a>
 ### Minimum next automated tests
 
 - **`test_create_device_success`**
@@ -601,6 +685,7 @@ Automated tests were not completed within the assessment timebox. If the project
 - **`test_duplicate_device_id_rejected`**
 - **`test_duplicate_session_id_rejected`**
 
+<!-- TOC --><a name="next-implementation-step"></a>
 ### Next implementation step
 
 The first priority would be to add automated API tests for the core workflow and validation rules. The most appropriate approach would be to use **Django REST Framework's API test utilities**, so that the tests exercise the API endpoints directly rather than only the model layer.
@@ -620,8 +705,9 @@ I would then add a small export endpoint:
 GET /api/sessions/{session_id}/export
 ```
 
-The initial version of this endpoint could return CSV, since the current readings endpoint already provides JSON.
+The initial version of this endpoint could return CSV, since the current readings endpoint (``GET /api/sessions/{session_id}/readings/``) already provides JSON.
 
+<!-- TOC --><a name="tradeoffs-and-design-choices"></a>
 ## Tradeoffs and design choices
 
 This prototype reflects a number of deliberate tradeoffs:
@@ -633,6 +719,7 @@ This prototype reflects a number of deliberate tradeoffs:
 - **Prototype-level validation over full production hardening** - enough to demonstrate the core data path, but without complete auditability, auth, deployment readiness, or edge-case handling.
 - **Assumed sync client layer** - kept the backend scope manageable, but leaves important retry, BLE, and local-state guarantees dependent on another component.
 
+<!-- TOC --><a name="security-privacy-and-research-integrity"></a>
 ## Security, privacy, and research integrity
 
 This prototype does not implement real authentication or role-based access control.
@@ -667,6 +754,7 @@ The backend could facilitate an improved methodology by:
 
 The backend alone cannot guarantee good scientific methodology, but it can provide technical foundations that make sound study design easier to maintain.
 
+<!-- TOC --><a name="scaling-path"></a>
 ## Scaling path
 
 For fewer than 100 devices:
@@ -701,6 +789,7 @@ At 1,000-10,000 devices:
 
 The ring's onboard storage can help buffer unsynced readings during BLE, mobile, or network outages. However, it is only a temporary sync buffer, not a backend scaling solution. At high sampling rates, especially for IMU data, local storage may fill quickly, so firmware and mobile teams need a retention, compression, and confirmation-before-delete strategy.
 
+<!-- TOC --><a name="questions-for-the-client-sync-app-team"></a>
 ## Questions for the client sync app team
 
 The backend prototype assumes the existence of a separate mobile or desktop sync client. If this project were continued, I would want to confirm the following points with the client sync team:
@@ -716,8 +805,10 @@ The backend prototype assumes the existence of a separate mobile or desktop sync
 - How are partial uploads or interrupted sync attempts resumed/handled?
 - What error responses does the client need from the backend in order to recover cleanly?
 
+<!-- TOC --><a name="cross-team-assumptions-and-open-questions"></a>
 ## Cross-team assumptions and open questions
 
+<!-- TOC --><a name="firmware-embedded"></a>
 ### Firmware / embedded
 
 - Are reading-level sequence numbers guaranteed to be monotonic per sensor stream?
@@ -726,6 +817,7 @@ The backend prototype assumes the existence of a separate mobile or desktop sync
 - Are there known clock-drift characteristics for timestamps generated on-device?
 - Can the ring report missing ranges, dropped samples, battery constraints, or sensor-quality flags?
 
+<!-- TOC --><a name="mobile-desktop-sync-client"></a>
 ### Mobile / desktop sync client
 
 - How is retry safety guaranteed?
@@ -734,6 +826,7 @@ The backend prototype assumes the existence of a separate mobile or desktop sync
 - How are BLE read failures surfaced to the backend or researcher-facing tools?
 - What payload size limits or batching strategies are expected?
 
+<!-- TOC --><a name="product-research-operations"></a>
 ### Product / research / operations
 
 - What is the required researcher-facing export format: JSON, CSV, both, or more?
@@ -743,6 +836,7 @@ The backend prototype assumes the existence of a separate mobile or desktop sync
 - What are the expected study sizes, sync frequency, and export volume?
 - Which failures must be visible to support staff versus hidden behind automatic retries?
 
+<!-- TOC --><a name="future-sync-protocol-enhancement"></a>
 ## Future sync protocol enhancement
 
 A production sync protocol might well use explicit instructions from the backend to the sync client.
@@ -768,12 +862,15 @@ This would support initial sync, incremental sync, and recovery sync.
 
 For this assessment, I treated this feature as a future enhancement rather than the core implementation. The required MVP is focused on registering devices, creating sessions, ingesting batches, validating input, handling duplicates, and retrieving/exporting readings.
 
+<!-- TOC --><a name="debugging-and-investigation"></a>
 ## Debugging and investigation
 
+<!-- TOC --><a name="issue-a-sensor-data-missing-or-duplicated-after-sync"></a>
 ### Issue A - Sensor data missing or duplicated after sync
 
 Researchers report that some study sessions show missing IMU or PPG samples, while other sessions contain duplicated records after mobile or desktop sync. The embedded and mobile teams say the ring appears to be collecting data correctly.
 
+<!-- TOC --><a name="likely-root-causes"></a>
 #### Likely root causes
 
 - sync client retries the same upload without a stable `batch_id`
@@ -787,6 +884,7 @@ Researchers report that some study sessions show missing IMU or PPG samples, whi
 - concurrent sync attempts from multiple clients
 - frontend or export logic duplicates rows rather than the backend storing true duplicates
 
+<!-- TOC --><a name="debugging-process"></a>
 #### Debugging process
 
 - identify the study, session, device, and sensor type affected
@@ -799,6 +897,7 @@ Researchers report that some study sessions show missing IMU or PPG samples, whi
 - check whether the data includes cases where the same ring was synced by more than one client
 - compare backend data with dashboard and export output
 
+<!-- TOC --><a name="tools-i-would-use"></a>
 #### Tools I would use
 
 - backend request logs
@@ -810,6 +909,7 @@ Researchers report that some study sessions show missing IMU or PPG samples, whi
 - exported file inspection
 - error monitoring and metrics
 
+<!-- TOC --><a name="design-changes-i-would-consider"></a>
 #### Design changes I would consider
 
 - stable batch IDs preserved across retries
@@ -821,10 +921,12 @@ Researchers report that some study sessions show missing IMU or PPG samples, whi
 - recovery sync for missing ranges
 - dashboard warnings of any gaps detected
 
+<!-- TOC --><a name="issue-b-dashboard-and-export-performance-degrade-with-larger-studies"></a>
 ### Issue B - Dashboard and export performance degrade with larger studies
 
 A researcher runs a 7-day study with 50 participants. The dashboard becomes slow, CSV/JSON exports take several minutes, and some export requests fail.
 
+<!-- TOC --><a name="likely-bottlenecks"></a>
 #### Likely bottlenecks
 
 - too many raw readings loaded into dashboard views
@@ -837,6 +939,7 @@ A researcher runs a 7-day study with 50 participants. The dashboard becomes slow
 - no pagination, downsampling, or aggregation
 - repeated dashboard queries recompute the same data
 
+<!-- TOC --><a name="debugging-process-1"></a>
 #### Debugging process
 
 - identify the slow endpoints
@@ -848,6 +951,7 @@ A researcher runs a 7-day study with 50 participants. The dashboard becomes slow
 - check timeout logs and failed requests
 - test smaller export ranges to identify breakpoints
 
+<!-- TOC --><a name="tools-i-would-use-1"></a>
 #### Tools I would use
 
 - Django Debug Toolbar locally
@@ -858,6 +962,7 @@ A researcher runs a 7-day study with 50 participants. The dashboard becomes slow
 - browser DevTools
 - profiling around export generation
 
+<!-- TOC --><a name="design-changes-i-would-consider-1"></a>
 #### Design changes I would consider
 
 - move to PostgreSQL
@@ -869,10 +974,12 @@ A researcher runs a 7-day study with 50 participants. The dashboard becomes slow
 - add downsampled dashboard views
 - consider partitioning or more specialised time-series storage if study scale requires it
 
+<!-- TOC --><a name="issue-c-signup-or-onboarding-flow-breaks-after-an-update"></a>
 ### Issue C - Signup or onboarding flow breaks after an update
 
 After a recent website or application update, some users can no longer complete developer signup or researcher onboarding. Analytics also show lower conversion and slower page loads.
 
+<!-- TOC --><a name="likely-root-causes-1"></a>
 #### Likely root causes
 
 - frontend regression in the signup or onboarding form
@@ -886,6 +993,7 @@ After a recent website or application update, some users can no longer complete 
 - deployment or database migration issue
 - feature flag misconfiguration
 
+<!-- TOC --><a name="debugging-process-2"></a>
 #### Debugging process
 
 - reproduce the affected flows
@@ -898,6 +1006,7 @@ After a recent website or application update, some users can no longer complete 
 - verify third-party dependencies such as auth, email, or analytics services
 - roll back or hotfix quickly if the impact is high
 
+<!-- TOC --><a name="tools-i-would-use-2"></a>
 #### Tools I would use
 
 - browser DevTools
@@ -909,6 +1018,7 @@ After a recent website or application update, some users can no longer complete 
 - synthetic checks
 - server metrics
 
+<!-- TOC --><a name="design-changes-i-would-consider-2"></a>
 #### Design changes I would consider
 
 - end-to-end tests for signup and onboarding
@@ -920,6 +1030,7 @@ After a recent website or application update, some users can no longer complete 
 - performance budgets
 - synthetic signup/onboarding checks
 
+<!-- TOC --><a name="limitations-and-further-steps"></a>
 ## Limitations and further steps
 
 The core backend workflow is implemented and manually verified: device registration, study session creation, batch ingestion, duplicate batch handling, and JSON retrieval of readings for a session.
@@ -951,6 +1062,7 @@ In summary, aside from the CSV export discussed above, the following areas are o
 - **Visualization** - primarily a frontend concern, though backend output may later need to support missing-data indicators, quality flags, and export controls.
 - **Testing workflow** - a fuller automated and/or manual testing strategy would need to be incorporated into a more mature development process.
 
+<!-- TOC --><a name="conclusion"></a>
 ## Conclusion
 
 This prototype demonstrates the core backend workflow for Open Ring sensor-data synchronization: device registration, study session creation, validated batch ingestion, duplicate-batch protection, and session-based retrieval of stored readings. Although it is intentionally limited in scope and not production-ready, it shows the main API design, data-validation approach, and sync assumptions needed for a backend MVP in a wearable research setting.
